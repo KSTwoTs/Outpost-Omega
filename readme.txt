@@ -12,6 +12,18 @@ Requires Python 3.10+ and pygame-ce (or classic pygame 2.x - install only one).
 
 Run main.py from inside the Outpost Omega folder.
 
+School of Computing Linux machines:
+pygame is already installed there, so skip the pip step (installing
+pygame-ce on top of it would conflict). Use python3, and quote the
+folder name if it has a space in it.
+
+    cd 'outpost omega'
+    python3 main.py
+
+  - On import, pygame may print a RuntimeWarning about AVX2. It is
+    harmless and can be ignored.
+  - The game can feel a little laggy over a remote session.
+
 ==========================================================================
 CONTROLS
 ==========================================================================
