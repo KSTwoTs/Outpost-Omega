@@ -41,10 +41,10 @@ F1 .................. Debug overlay (waypoints, ranges, spatial hash, hitboxes,
                       boss pixel-mask outline)
 
 ==========================================================================
-ITEMS DEVELOPED
+ITEMS DEVELOPED (100 pts total)
 ==========================================================================
 
-Task 1: Core Engine and Architecture
+Task 1: Core Engine and Architecture (20 pts)
   - GameManager with a fixed-timestep game loop (60 updates/sec,
     independent of frame rate) and OnStart / OnUpdate / OnRender hooks
   - SceneManager using a scene stack: Menu, Level Select, Play,
@@ -58,7 +58,7 @@ Task 1: Core Engine and Architecture
   - Save system (save.json): best stars and score per sector,
     sector unlocks, last difficulty
 
-Task 2: Player Character - Commander Rhea Vance
+Task 2: Player Character - Commander Vance (10 pts)
   - InputSystem that maps keys and mouse to named Commands
   - 8-direction movement with acceleration, max speed and
     friction (Vector2 velocity, lower friction on ice tiles)
@@ -72,7 +72,7 @@ Task 2: Player Character - Commander Rhea Vance
     knockback, screen shake, 45 s cooldown
   - Downed at 0 HP, respawns at the Core after 5 s
 
-Task 3: Towers (all 5 from Milestone 1)
+Task 3: Towers (15 pts)
   - Grid placement with green/red preview, range circle and checks
     (buildable tile, Commander not in the way, path not blocked)
   - Targeting priorities: first, last, strongest, closest
@@ -87,7 +87,7 @@ Task 3: Towers (all 5 from Milestone 1)
   - Missile Battery: homing missiles with a turn-rate limit and
     splash damage; can hit flyers
 
-Task 4: Enemies (all 6 from Milestone 1)
+Task 4: Enemies (15 pts)
   - Enemy base class + subclasses, stats from enemies.json
   - Finite state machine: Walk, Attack, Stunned, Dying
     (subclasses add their own states)
@@ -105,7 +105,7 @@ Task 4: Enemies (all 6 from Milestone 1)
     shots while it is up)
   - Ground enemies attack the Commander when she blocks their route
 
-Task 5: Levels and Waves
+Task 5: Levels and Waves (10 pts)
   - Tile map loader for a 40x20 grid of 32 px tiles (path,
     buildable, blocked, spawn, core; ice/acid/hive-wall tile types
     supported)
@@ -129,7 +129,7 @@ Task 5: Levels and Waves
   - Difficulty: enemy HP x (1 + 0.15 x wave), plus
     Easy / Normal / Hard multipliers
 
-Task 6: Items and Economy
+Task 6: Items and Economy (10 pts)
   - Energy economy: start with 250 E, earn from kills and crystals
   - Weighted loot table drops on enemy death
   - Energy Crystal (+25 E), Repair Kit (heals a tower 40%),
@@ -139,7 +139,7 @@ Task 6: Items and Economy
     walking over them or clicking (generous click area)
   - Scoring (kills + leftover Energy) and 1-3 star rating from Core HP
 
-Task 7: Collision and Physics
+Task 7: Collision and Physics (10 pts)
   - Spatial hash broad phase (64 px cells) rebuilt every frame
   - Circle-vs-circle narrow phase using squared distances (no sqrt)
   - pygame.mask narrow phase for the Hive Overseer's irregular shape:
@@ -150,7 +150,7 @@ Task 7: Collision and Physics
   - Homing steering with a turn-rate limit; splash falloff and knockback
   - Object pooling for projectiles and particles
 
-Task 8: Graphics, Effects, UI and Audio
+Task 8: Graphics, Effects, UI and Audio (10 pts)
   - AssetManager: loads PNGs from assets/sprites if present, otherwise
     generates placeholder pixel-art sprites in code; caches rotated,
     flipped and tinted versions
@@ -170,4 +170,6 @@ WORK IN PROGRESS / NEXT STEPS
   - Restore sector-unlock progression (code is in place, turned off
     for the demo)
   - Final sprite art, music and sound effects (placeholders now)
+  - Campaign cutscenes/dialogue between sectors/missions
+  - More tower upgrade paths
   - Balancing across all sectors
