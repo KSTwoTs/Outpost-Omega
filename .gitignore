@@ -1,0 +1,10 @@
+# Python bytecode cache (Python rebuilds these automatically)
+__pycache__/
+*.py[cod]
+
+# Claude / Claude Code working files
+.claude/
+CLAUDE.local.md
+
+# Built submission zips
+*.zip

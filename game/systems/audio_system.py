@@ -1,10 +1,10 @@
 """AudioSystem: sound effects and looping music through pygame.mixer.
 
-If assets/sounds/<name>.wav (or .ogg) exists it is used. Otherwise a short
-synthesized placeholder beep is generated. If the computer has no audio
-device, every call quietly does nothing.
-
-Music: put assets/sounds/music.ogg in place and call play_music().
+Sound effects are synthesized chiptune blips (SYNTH table below) unless an
+assets/sounds/<name>.wav (or .ogg) file overrides one. The background
+track is assets/sounds/music.ogg, a looping chiptune piece played by
+play_music(). If the computer has no audio device, every call quietly
+does nothing.
 """
 import array
 import math
@@ -35,6 +35,7 @@ SYNTH = {
     "rail":      (1800, 200, 0.25, 0.25, "square"),
     "missile":   (300, 500, 0.15, 0.15, "noise"),
     "emp":       (200, 1200, 0.9, 0.18, "sine"),
+    "fuse":      (500, 1500, 0.30, 0.18, "square"),
     "shield":    (250, 500, 0.5, 0.25, "sine"),
     "boss":      (90, 60, 1.2, 0.40, "square"),
 }

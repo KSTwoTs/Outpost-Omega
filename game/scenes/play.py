@@ -98,6 +98,8 @@ class PlayScene(Scene):
         ev.subscribe("boss_spawned", self.on_boss_spawned)
         ev.subscribe("walls_changed", self.on_walls_changed)
         ev.subscribe("tower_emp", lambda **_: self.ui.toast("EMP! Towers disabled - repair them with E", S.CYAN))
+        ev.subscribe("tower_bombed", lambda towers_hit=0, **_: towers_hit and self.ui.toast(
+            "Detonator blast! Damaged towers - repair them with E", S.ORANGE))
         ev.subscribe("commander_respawned",
                      lambda **_: self.ui.toast("Commander Vance is back online", S.CYAN))
 

@@ -17,7 +17,7 @@ class EnemySystem:
         self.assets = assets       # the boss builds its collision mask from its sprite
         self.enemies = []
         self.commander = None      # set by PlayScene after PlayerSystem exists
-        self.towers = None         # set by PlayScene (Saboteurs look for towers)
+        self.towers = None         # set by PlayScene (Saboteurs and Detonators look for towers)
         events.subscribe("spawn_enemy", self.on_spawn_enemy)
         events.subscribe("path_changed", self.on_path_changed)
         # Later sectors are tougher: level files can scale enemy HP.

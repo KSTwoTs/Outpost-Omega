@@ -181,7 +181,10 @@ class Commander(pygame.sprite.Sprite):
             screen.blit(label, label.get_rect(center=(x, y - 20)))
             return
         pygame.draw.ellipse(screen, (90, 70, 50), (x - 10, y + 10, 20, 7))
-        frame = f"commander_{int(self.anim_t) % 2}"
+        if self.fsm.name == "shoot":
+            frame = "commander_shoot"
+        else:
+            frame = f"commander_{int(self.anim_t) % 2}"
         tint = "white" if self.hurt_timer > 0 else None
         assets.blit_centered(screen, frame, (x, y), flip=self.facing_left, tint=tint)
         if self.fsm.name == "shoot":

@@ -1,9 +1,10 @@
 """AssetManager: loads and caches sprites and fonts.
 
-image("skitter_0") first looks for assets/sprites/skitter_0.png. If that
-file doesn't exist it builds a placeholder in code (pixel maps below), so
-the game always runs and you can drop real art in later without changing
-any other code. Sprite names are listed in SPRITE_NAMES.
+The game's sprites are the PNGs in assets/sprites/ (one file per name in
+SPRITE_NAMES). They were drawn as the pixel maps below and exported with
+tools/export_sprites.py, so the maps are the editable source of the art.
+If a PNG is ever missing, image() rebuilds it from its pixel map so the
+game still runs.
 """
 import math
 import os
@@ -39,6 +40,15 @@ COMMANDER_TOP = [
 COMMANDER_LEGS = [
     ["....kSdkkdSk....", "....kSk..kSk....", "...kSSk..kSSk...", "...kkkk..kkkk..."],
     ["....kSdkkdSk....", ".....kSkkSk.....", "....kSSk.kSSk...", "....kkkk.kkkk..."],
+]
+# Shooting pose: blaster arm raised to the right (the sprite is flipped when
+# she aims left) with the barrel's cyan tip and a brighter chest light.
+COMMANDER_SHOOT_TOP = COMMANDER_TOP[:7] + [
+    ".kSSskooooksskkk",
+    ".kSdskyyyyksSSSc",
+    ".kSdsskooksskkk.",
+    ".kkkskssssskk...",
+    "....kdssssdk....",
 ]
 COMMANDER_DOWN = [
     "................", "................", "................", "................",
@@ -88,11 +98,34 @@ BROOD_SAC = [
     "kmmmggmmggmmmk", "kmMmmmmmmmmMmk", "kmmgmmMMmmgmmk", "kmmmmggggmmmmk",
     ".kmMmmmmmmMmk.", ".kkmmgmmgmmkk.", "..k.kkkkkk.k..", ".k..........k.",
 ]
+# Second frame: the sac swells and its spots shift (a slow pulse).
+BROOD_SAC_PULSE = [
+    "...kkkkkkkk...", ".kkmmmmmmmmkk.", "kmmMmmggmmMmmk", "kmmmmMMMMmmmmk",
+    "kmgmmmggmmmgmk", "kmMmmgmmgmmMmk", "kmmmmMMMMmmmmk", "kmgmmggggmmgmk",
+    "kmmMmmmmmmmMmk", ".kkmmmgmgmmkk.", "...kkkkkkkk...", "k.k........k.k",
+]
 
 SABOTEUR = [
     "....kkkk....", "...kggggk...", "..kgccccgk..", "..kgggggGk..",
     ".kkGgyygGkk.", "k.kgggggGk.k", "..kGgggGGk..", "..kgg..ggk..",
     ".kgk....kgk.", ".kk......kk.",
+]
+SABOTEUR_STEP = [
+    "....kkkk....", "...kggggk...", "..kgccccgk..", "..kgggggGk..",
+    "k.kGgyygGk.k", ".kkgggggGkk.", "..kGgggGGk..", "...kg..gk...",
+    "...kgk.kgk..", "...kk..kk...",
+]
+
+# Detonator: a bloated beetle with a glowing payload sac and a lit fuse.
+DETONATOR = [
+    "......kk......", ".....kryk.....", "......kk......", "...kkkkkkkk...",
+    "..kooyyyyook..", ".kooyywwyyook.", ".koyyyyyyyyok.", "kgkooyyyyookgk",
+    ".kgGkooookGgk.", "..kgGkkkkGgk..", ".kg.kg..gk.gk.", "k...k....k...k",
+]
+DETONATOR_STEP = [
+    ".....k..k.....", "......kyrk....", "......kk......", "...kkkkkkkk...",
+    "..kooyyyyook..", ".kooyywwyyook.", ".koyyyyyyyyok.", "kgkooyyyyookgk",
+    ".kgGkooookGgk.", "..kgGkkkkGgk..", "..kgk.gk.kgk..", ".k..k....k..k.",
 ]
 
 OVERSEER = [
@@ -103,11 +136,18 @@ OVERSEER = [
     "..kmmmMMMMMMMMMMmmmk..", "...kkmmk.kmmk.kmmkk...", "..kmmk..kmmk..kmmk....",
     "..kkk...kkk...kkk.....",
 ]
+# Second frame: eyes narrow and the legs step to the other side.
+OVERSEER_STEP = OVERSEER[:5] + [
+    ".kmMggmkkmggmkkmggMmk.",
+] + OVERSEER[6:13] + [
+    "...kkmmk.kmmk.kmmkk...", "....kmmk..kmmk..kmmk..", "....kkk...kkk...kkk...",
+]
 
 SPRITE_NAMES = [
-    "commander_0", "commander_1", "commander_down",
+    "commander_0", "commander_1", "commander_shoot", "commander_down",
     "skitter_0", "skitter_1", "brute_0", "brute_1", "glider_0", "glider_1",
-    "brood_sac_0", "saboteur_0", "hive_overseer_0",
+    "brood_sac_0", "brood_sac_1", "saboteur_0", "saboteur_1", "detonator_0", "detonator_1",
+    "hive_overseer_0", "hive_overseer_1",
     "tower_base", "turret_pulse", "turret_tesla", "turret_cryo",
     "turret_railgun", "turret_missile", "core",
     "energy_crystal", "repair_kit", "overcharge", "shield_battery",
@@ -214,7 +254,10 @@ def _item(kind):
     return s
 
 
-def build_placeholder(name):
+def build_sprite(name):
+    """Draw a sprite from its pixel map / drawing code (source of the PNGs)."""
+    if name == "commander_shoot":
+        return from_pixels(COMMANDER_SHOOT_TOP + COMMANDER_LEGS[0])
     if name == "commander_0":
         return from_pixels(COMMANDER_TOP + COMMANDER_LEGS[0])
     if name == "commander_1":
@@ -230,11 +273,13 @@ def build_placeholder(name):
     if name.startswith("glider_"):
         return from_pixels(GLIDER[int(name[-1]) % 2])
     if name.startswith("brood_sac"):
-        return from_pixels(BROOD_SAC)
+        return from_pixels(BROOD_SAC_PULSE if name.endswith("_1") else BROOD_SAC)
     if name.startswith("saboteur"):
-        return from_pixels(SABOTEUR, 2)
+        return from_pixels(SABOTEUR_STEP if name.endswith("_1") else SABOTEUR, 2)
+    if name.startswith("detonator"):
+        return from_pixels(DETONATOR_STEP if name.endswith("_1") else DETONATOR)
     if name.startswith("hive_overseer"):
-        return from_pixels(OVERSEER, 3)
+        return from_pixels(OVERSEER_STEP if name.endswith("_1") else OVERSEER, 3)
     if name == "tower_base":
         return _tower_base()
     if name.startswith("turret_"):
@@ -265,7 +310,7 @@ class AssetManager:
             if os.path.exists(path):
                 img = pygame.image.load(path).convert_alpha()
             else:
-                img = build_placeholder(name)
+                img = build_sprite(name)
             self._images[name] = img
         return img
 

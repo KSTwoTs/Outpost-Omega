@@ -142,6 +142,12 @@
           "count": 3,
           "interval": 3.0,
           "delay": 4
+        },
+        {
+          "enemy": "detonator",
+          "count": 2,
+          "interval": 2.5,
+          "delay": 4
         }
       ],
       "boss": null
@@ -188,6 +194,12 @@
           "count": 3,
           "interval": 2.5,
           "delay": 8
+        },
+        {
+          "enemy": "detonator",
+          "count": 3,
+          "interval": 2.5,
+          "delay": 4
         }
       ],
       "boss": null
@@ -217,6 +229,12 @@
           "count": 3,
           "interval": 2.5,
           "delay": 6
+        },
+        {
+          "enemy": "detonator",
+          "count": 3,
+          "interval": 2.5,
+          "delay": 4
         }
       ],
       "boss": null

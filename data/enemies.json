@@ -41,6 +41,16 @@
     "emp_duration": 3.0, "emp_range": 70, "emp_damage": 10, "emp_cooldown": 9.0,
     "description": "Stops near towers and EMPs them for 3 s."
   },
+  "detonator": {
+    "name": "Detonator",
+    "enabled": true,
+    "hp": 32, "speed": 55, "armor": 0, "radius": 10,
+    "reward": 12, "score": 30, "core_damage": 8,
+    "flying": false, "attack_dps": 0,
+    "seek_range": 110, "charge_speed_mult": 1.8,
+    "fuse_time": 0.5, "blast_radius": 60, "blast_damage": 60,
+    "description": "Rushes the nearest tower and explodes, breaking towers in the blast."
+  },
   "hive_overseer": {
     "name": "Hive Overseer",
     "enabled": true,

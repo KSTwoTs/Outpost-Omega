@@ -3,7 +3,8 @@
 Stats come from data/enemies.json. Every enemy runs a StateMachine:
     Walk -> Attack (Commander in the way) -> Stunned -> Dying
 Subclasses add their own states through build_states() / special_action():
-the Saboteur adds "emp", the Hive Overseer adds "shielded".
+the Saboteur adds "emp", the Detonator adds "charge", the Hive Overseer
+adds "shielded".
 Ground enemies follow the level's waypoints with a PathFollower. Gliders
 use a seek steering behavior straight at the Core instead.
 """
@@ -322,7 +323,8 @@ class Glider(Enemy):
 class BroodSac(Enemy):
     """Bursts into Skitters on death (EnemySystem reads 'spawn_on_death')."""
     sprite = "brood_sac"
-    frame_count = 1
+    frame_count = 2
+    anim_fps = 3
 
 
 class EmpCharge(State):
@@ -346,7 +348,8 @@ class Saboteur(Enemy):
     """Hunts towers: when one is within emp_range it stops and EMPs every
     tower in range (disabled for emp_duration s and damaged)."""
     sprite = "saboteur"
-    frame_count = 1
+    frame_count = 2
+    anim_fps = 8
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -393,6 +396,161 @@ class Saboteur(Enemy):
                                (int(self.pos.x + offset[0]), int(self.pos.y + offset[1])), r, 1)
 
 
+class Charge(State):
+    """Detonator: leave the path and rush the targeted tower. On contact the
+    fuse burns for fuse_time, then it explodes. If every tower in reach is
+    gone (sold or already broken) it walks back to the path."""
+
+    def enter(self, e):
+        e.off_path = True
+        e.fuse_timer = None
+        if e.target_tower is not None:
+            e.system.audio.play("fuse")
+
+    def update(self, e, dt):
+        if e.stun_timer > 0:
+            return "stunned"
+        if e.fuse_timer is not None:          # fuse lit: stand still and blow up
+            e.vel.update(0, 0)
+            e.fuse_timer -= dt
+            if e.fuse_timer <= 0:
+                e.detonate()
+            return None
+        target = e.pick_target()
+        if target is None:
+            if e.step_toward(e.follower.pos, e.speed, dt):
+                e.off_path = False
+                return "walk"
+            return None
+        reach = e.radius + 12
+        if e.step_toward((target.x, target.y), e.speed * e.stats.get("charge_speed_mult", 2.0),
+                         dt, stop_at=reach):
+            e.fuse_timer = e.stats.get("fuse_time", 0.35)
+        return None
+
+
+class Detonator(Enemy):
+    """Suicide bomber. Walks the path until an active tower is within
+    seek_range, then charges it and explodes, damaging every tower (and the
+    Commander) in blast_radius with falloff. Kill it first and it just pops:
+    no blast, and you get the Energy."""
+    sprite = "detonator"
+    frame_count = 2
+    anim_fps = 10
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.target_tower = None
+        self.off_path = False
+        self.fuse_timer = None
+
+    def build_states(self):
+        states = super().build_states()
+        states["charge"] = Charge()
+        return states
+
+    # ---- targeting ---------------------------------------------------------
+    @staticmethod
+    def _usable(tower):
+        return not tower.health.is_dead
+
+    def pick_target(self):
+        towers = self.system.towers
+        if towers is None:
+            return None
+        seek = self.stats.get("seek_range", 120)
+        t = self.target_tower
+        # Keep chasing the current target while it stands and is reasonably close.
+        if (t is not None and t in towers.towers and self._usable(t)
+                and self.pos.distance_squared_to((t.x, t.y)) <= (seek * 1.5) ** 2):
+            return t
+        best, best_d = None, seek * seek
+        for tower in towers.towers:
+            if not self._usable(tower):
+                continue
+            d = self.pos.distance_squared_to((tower.x, tower.y))
+            if d <= best_d:
+                best, best_d = tower, d
+        self.target_tower = best
+        return best
+
+    def special_action(self, dt):
+        # Back from a stun while off the path: resume the charge/return logic
+        # instead of snapping onto the path.
+        if self.off_path or self.pick_target() is not None:
+            return "charge"
+        return None
+
+    # ---- movement ----------------------------------------------------------
+    def step_toward(self, point, speed, dt, stop_at=2.0):
+        """Move straight at point. Returns True once within stop_at."""
+        to = pygame.math.Vector2(point) - self.pos
+        dist = to.length()
+        if dist <= stop_at:
+            self.vel.update(0, 0)
+            return True
+        step = min(dist - stop_at + 0.01, speed * dt)
+        self.vel = to / dist * speed
+        self.pos += to / dist * step
+        if abs(self.vel.x) > 1:
+            self.facing_left = self.vel.x < 0
+        return dist - step <= stop_at
+
+    def knockback(self, amount, direction=None):
+        # Off the path, a blast pushes it away instead of snapping it back.
+        if self.off_path and direction is not None:
+            self.pos += pygame.math.Vector2(direction) * amount
+        else:
+            super().knockback(amount, direction)
+
+    def future_position(self, t):
+        if self.fsm.name == "charge":
+            p = self.pos + self.vel * t
+            return (p.x, p.y)
+        return super().future_position(t)
+
+    # ---- the blast ---------------------------------------------------------
+    def detonate(self):
+        if self.remove:
+            return
+        x, y = self.pos.x, self.pos.y
+        radius = self.stats.get("blast_radius", 60)
+        damage = self.stats.get("blast_damage", 60)
+        hit = 0
+        towers = self.system.towers
+        for t in (towers.towers if towers else []):
+            d = math.hypot(t.x - x, t.y - y)
+            if d <= radius + 12:
+                falloff = 1.0 - 0.5 * min(1.0, d / radius)
+                t.health.damage(damage * falloff, ignore_armor=True)
+                hit += 1
+        cmd = self.system.commander
+        if cmd is not None and cmd.alive:
+            d = math.hypot(cmd.pos.x - x, cmd.pos.y - y)
+            if d <= radius:
+                cmd.take_damage(damage * 0.5 * (1.0 - 0.5 * d / radius))
+        fx = self.system.effects
+        fx.explosion(x, y, S.ORANGE, count=36)
+        fx.burst(x, y, S.ENERGY, 14, 220, 0.35, 3)
+        fx.ring(x, y, radius, S.ORANGE, 0.35, width=4)
+        fx.shake(0.35)
+        self.system.audio.play("explode")
+        self.system.events.publish("tower_bombed", enemy=self, towers_hit=hit)
+        self.remove = True          # blew itself up: no Energy, no loot
+
+    def render(self, screen, assets, offset):
+        super().render(screen, assets, offset)
+        if self.fsm.name == "charge" and self.targetable:
+            x, y = int(self.pos.x + offset[0]), int(self.pos.y + offset[1])
+            lit = self.fuse_timer is not None
+            blink = int(self.fsm.time_in_state * (18 if lit else 8)) % 2 == 0
+            if blink:
+                pygame.draw.circle(screen, S.RED if lit else S.ENERGY, (x, y - self.radius - 2), 3)
+            if lit:
+                r = int(self.stats.get("blast_radius", 60))
+                pygame.draw.circle(screen, S.RED, (x, y), r, 1)
+
+
 class Shielded(State):
     """Boss phase: stops, raises an invulnerable shield and calls in Skitters."""
     DURATION = 4.0
@@ -423,7 +581,8 @@ class HiveOverseer(Enemy):
     between its legs can't. While shielded, the round bubble blocks shots.
     """
     sprite = "hive_overseer"
-    frame_count = 1
+    frame_count = 2
+    anim_fps = 3
     is_boss = True
     SHIELD_RADIUS = 50
     BEAM_THICKNESS = 3     # railgun beam half-width when testing against the mask
@@ -522,5 +681,6 @@ ENEMY_CLASSES = {
     "glider": Glider,
     "brood_sac": BroodSac,
     "saboteur": Saboteur,
+    "detonator": Detonator,
     "hive_overseer": HiveOverseer,
 }

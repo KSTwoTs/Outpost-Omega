@@ -39,17 +39,17 @@ folder name if it has a space in it.
 | Esc / P | Pause |
 | F1 | Debug overlay: waypoints, ranges, spatial-hash cells, hitboxes (boss shows its pixel-mask outline), FPS |
 
-## What works now (Milestone 2)
+## What works now (Milestone 3)
 
 - Menu → Level Select (difficulty Easy/Normal/Hard, best stars, mini-map) → Play → Pause → Win/Lose
-- Three sectors, 10 waves each, boss on wave 10 (all unlocked for the demo):
+- Three sectors, 10 waves each, boss on wave 10. Sector 1 starts unlocked; winning a sector unlocks the next:
   - Sector 1 Desert Outpost: one winding path
   - Sector 2 Frozen Relay Station: two lanes merging before the Core, ice patches (Vance slides)
   - Sector 3 Hive Crash Site: acid pools, hive walls that grow mid-wave and reroute aliens (A*)
 - All 5 towers: Pulse (lead-aimed shots), Tesla (chain lightning), Cryo (slow aura),
   Railgun (piercing beam, ignores armor), Missile Battery (homing + splash), 3 tiers each
-- All 6 enemies: Skitter, Brute, Glider (seek steering), Brood Sac (splits into Skitters),
-  Saboteur (EMPs towers), Hive Overseer boss (shield phases, summons Skitters,
+- All 7 enemies: Skitter, Brute, Glider (seek steering), Brood Sac (splits into Skitters),
+  Saboteur (EMPs towers), Detonator (charges a tower and blows itself up), Hive Overseer boss (shield phases, summons Skitters,
   pixel-perfect `pygame.mask` hit detection)
 - Commander: acceleration/friction movement, tile collision, auto-blaster, repair,
   Orbital Strike, downed → respawn at the Core after 5 s
@@ -58,14 +58,16 @@ folder name if it has a space in it.
   build countdown); walk over them or click them (generous click area)
 - Energy economy, scoring, 3-star rating, save.json (best stars/score, unlocks)
 - Effects: pooled particles, screen shake, hit flash, damage numbers, lightning, beams
-- Placeholder pixel-art sprites and synthesized sound effects (see "Art & sound")
+- Final pixel-art sprites with animations (Vance walk/shoot/downed, 2-frame cycles for every alien),
+  chiptune sound effects and a looping music track (see "Art & sound")
 
 ## Still to build
 
-| Feature | Where |
+| Feature | Notes |
 |---|---|
-| Unlock progression | Turned off for the demo; one line in `scenes/level_select.py` restores it |
-| Music | Drop `assets/sounds/music.ogg` in |
+| Cutscenes / dialogue | Story beats between sectors |
+| More upgrade paths | Beyond the current 3 tiers per tower |
+| Balancing | Tune all three sectors |
 
 The grading write-up (items developed) is in `readme.txt`.
 
@@ -77,7 +79,9 @@ data/towers.json            tower stats per tier
 data/enemies.json           enemy stats
 data/items.json             loot table
 data/levels/sector1-3.json  tile maps (40x20), waves, lanes, hive-wall events
-assets/sprites, assets/sounds   optional real art/sound (overrides placeholders)
+assets/sprites/             final sprite PNGs (29 files)
+assets/sounds/music.ogg     looping background music
+tools/export_sprites.py     re-exports the sprite PNGs from their pixel maps
 game/
   settings.py               constants, palette, difficulty multipliers
   game_manager.py           window, fixed-timestep loop, save data
@@ -110,11 +114,14 @@ game/
 
 ## Art & sound
 
-Every sprite is drawn in code (`systems/asset_manager.py`) with the game palette.
-To use real art, save a PNG under `assets/sprites/` using the sprite's name, for
-example `skitter_0.png`, `turret_pulse.png` or `core.png`. The full list is
-`SPRITE_NAMES` in `asset_manager.py`. Sounds work the same way: put
-`assets/sounds/shoot.wav` (or `.ogg`) in place to replace that placeholder beep.
+The sprites are pixel art in the game palette, shipped as PNGs in `assets/sprites/`
+(the full list is `SPRITE_NAMES` in `systems/asset_manager.py`). They're authored as
+pixel maps in `asset_manager.py`; after editing one, run `python tools/export_sprites.py`
+to re-export the PNGs. If a PNG is missing, the game rebuilds it from its pixel map.
+
+Sound effects are synthesized chiptune blips (`SYNTH` in `systems/audio_system.py`);
+any of them can be overridden by dropping `assets/sounds/<name>.wav` (or `.ogg`) in.
+The background music is `assets/sounds/music.ogg`, a 30-second chiptune loop.
 
 ## Balancing
 

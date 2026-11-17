@@ -36,9 +36,9 @@ class LevelSelectScene(Scene):
         save = game.save
         for i, (sid, title, sub, color) in enumerate(SECTORS):
             rect = pygame.Rect(130 + i * 360, 170, 300, 300)
-            # All sectors unlocked for the Milestone 2 demo. To restore
-            # progression: unlocked = level_exists(sid) and i < save.get("unlocked", 1)
-            unlocked = level_exists(sid)
+            # Progression: Sector 1 is always open; winning a sector unlocks
+            # the next one (GameManager.record_result bumps save["unlocked"]).
+            unlocked = level_exists(sid) and i < save.get("unlocked", 1)
             self.cards.append((rect, sid, title, sub, color, unlocked))
         self.thumbs = {sid: self.make_thumbnail(sid) for _, sid, *_ in self.cards if level_exists(sid)}
         self.diff_buttons = [
